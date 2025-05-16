@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import { FaChevronDown } from "react-icons/fa";
 import Pagination from "./Pagination";
 import { BackendUser, DataItem } from "@/types/interfaces";
+import Loading from "./Loading";
+import ErrorPage from "./Error";
 
 const DataTable = () => {
   const [data, setData] = useState<DataItem[]>([]);
@@ -75,19 +77,11 @@ const DataTable = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-blue-500 flex items-center justify-center">
-        <p className="text-white text-lg">Loading...</p>
-      </div>
-    );
+    return <Loading/>;
   }
 
   if (error) {
-    return (
-      <div className="min-h-screen bg-blue-500 flex items-center justify-center">
-        <p className="text-white text-lg">{error}</p>
-      </div>
-    );
+    return <ErrorPage message={error}/>;
   }
 
 
