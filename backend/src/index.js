@@ -27,7 +27,7 @@ app.get("/api/users", async (req, res) => {
 
     // Get paginated users
     const result = await db.query(
-      "SELECT id, first_name, last_name, email FROM users ORDER BY id LIMIT $1 OFFSET $2",
+      "SELECT id, first_name, last_name, email, address1, address2, phone, gender FROM users ORDER BY id LIMIT $1 OFFSET $2",
       [limit, offset]
     );
 
