@@ -1,91 +1,54 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FaChevronDown } from "react-icons/fa";
 import Pagination from "./Pagination";
-import { DataItem } from "@/types/interfaces";
+import { BackendUser, DataItem } from "@/types/interfaces";
 
 const DataTable = () => {
-  const data: DataItem[] = [
-    {
-      id: "0001",
-      firstName: "Duggal",
-      lastName: "Burgen",
-      email: "Duggal@gmail.com",
-      phone: "0001893",
-    },
-    {
-      id: "0002",
-      firstName: "Duggal",
-      lastName: "Burgen",
-      email: "Duggal@gmail.com",
-      phone: "0001894",
-    },
-    {
-      id: "0003",
-      firstName: "Duggal",
-      lastName: "Burgen",
-      email: "Duggal@gmail.com",
-      phone: "0001895",
-    },
-    {
-      id: "0004",
-      firstName: "Duggal",
-      lastName: "Burgen",
-      email: "Duggal@gmail.com",
-      phone: "0001896",
-    },
-    {
-      id: "0005",
-      firstName: "Duggal",
-      lastName: "Burgen",
-      email: "Duggal@gmail.com",
-      phone: "",
-    },
-    {
-      id: "0006",
-      firstName: "Duggal",
-      lastName: "Burgen",
-      email: "Duggal@gmail.com",
-      phone: "0001898",
-    },
-    {
-      id: "0007",
-      firstName: "Duggal",
-      lastName: "Burgen",
-      email: "Duggal@gmail.com",
-      phone: "0001899",
-    },
-    {
-      id: "0008",
-      firstName: "Duggal",
-      lastName: "Burgen",
-      email: "Duggal@gmail.com",
-      phone: "0001900",
-    },
-    {
-      id: "0009",
-      firstName: "Duggal",
-      lastName: "Burgen",
-      email: "Duggal@gmail.com",
-      phone: "0001901",
-      address1: "779 Reserve Road",
-      address2: "Room 1455",
-      phoneFormatted: "604-848-8755",
-    },
-    {
-      id: "0010",
-      firstName: "Duggal",
-      lastName: "Burgen",
-      email: "Duggal@gmail.com",
-      phone: "",
-    },
-  ];
-
+  const [data, setData] = useState<DataItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [goToPage, setGoToPage] = useState("");
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(
+          `http://localhost:3000/api/users?page=${currentPage}&limit=${itemsPerPage}`
+        );
+        if (!response.ok) throw new Error("Failed to fetch users");
+        const result = await response.json();
+        const mappedData = result.data.map((user: BackendUser) => ({
+          id: user.id.toString(),
+          firstName: user.first_name,
+          lastName: user.last_name,
+          email: user.email,
+          phone: user?.phone, // Backend doesn't provide phone, so default to empty
+          address1: user?.address1, // Default to empty as backend doesn't provide
+          address2: user?.address2, // Default to empty as backend doesn't provide
+          phoneFormatted: "", // Default to empty as backend doesn't provide
+        }));
+        setData(mappedData);
+        setTotalItems(result.meta.total);
+        setTotalPages(result.meta.pages);
+      } catch (err) {
+        setError("Error fetching users. Please try again later.");
+        console.error("Error fetching users:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, [currentPage, itemsPerPage]);
 
   const toggleRow = (id: string) => {
     const newExpandedRows = new Set(expandedRows);
@@ -97,18 +60,10 @@ const DataTable = () => {
     setExpandedRows(newExpandedRows);
   };
 
-  const totalItems = data.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
-  const paginatedData = data.slice(startIndex, endIndex);
-
-  const handleItemsPerPageChange = (
-    e: React.ChangeEvent<HTMLSelectElement>
-  ) => {
+  const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newItemsPerPage = parseInt(e.target.value);
     setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1);
+    setCurrentPage(1); // Reset to first page
   };
 
   const handleGoToPage = () => {
@@ -118,6 +73,24 @@ const DataTable = () => {
     }
     setGoToPage("");
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-blue-500 flex items-center justify-center">
+        <p className="text-white text-lg">Loading...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-blue-500 flex items-center justify-center">
+        <p className="text-white text-lg">{error}</p>
+      </div>
+    );
+  }
+
+
 
   return (
     <div className="min-h-screen bg-blue-500 p-6 flex flex-col items-center justify-center">
@@ -151,7 +124,7 @@ const DataTable = () => {
                 </tr>
               </thead>
               <tbody>
-                {paginatedData.map((item) => (
+                {data.map((item) => (
                   <React.Fragment key={item.id}>
                     <tr
                       className="hover:bg-gray-100 cursor-pointer border-b border-gray-200"
